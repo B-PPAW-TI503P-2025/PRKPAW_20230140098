@@ -76,4 +76,8 @@ exports.CheckOut = (req, res) => {
     )} WIB`,
     data: formattedData,
   });
+  exports.getAllPresensi = (req, res) => {
+  res.send('Menampilkan semua data presensi');
+};
+
 };

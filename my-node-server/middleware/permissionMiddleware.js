@@ -16,4 +16,13 @@
  	    console.log('Middleware: Gagal! Pengguna bukan admin.');
  	    return res.status(403).json({ message: 'Akses ditolak: Hanya untuk admin'});
  	  }
+
+	exports.addUserData = (req, res, next) => {
+  req.user = {
+    id: 1,
+    nama: "Syafito Denova"
+  };
+  next();
+};
+
  	};
