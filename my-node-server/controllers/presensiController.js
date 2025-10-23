@@ -1,4 +1,4 @@
-const presensiRecords = require("../data/presensiData");
+const presensiRecords = require("../data/PresensiData");
 const { format } = require("date-fns-tz");
 const timeZone = "Asia/Jakarta";
 
