@@ -12,3 +12,6 @@ o  Enpoint search berdasarkan nama
 
 o  Endpoint search berdasarkan tanggal
 ![alt text](<TUGAS/SS/Endpoint search berdasarkan tanggal.png>)
+
+tes
+<img width="1366" height="768" alt="Image" src="https://github.com/user-attachments/assets/fd079490-4ea4-4409-915b-3f6c5a9e277a" />
