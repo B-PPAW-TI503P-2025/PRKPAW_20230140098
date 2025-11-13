@@ -1,6 +1,6 @@
 # Tugas 3
 image 1
-TUGAS/SS/PresensiCheck in.jpg
+TUGAS/SS/PrjpgesensiCheck in.
 image 2
 TUGAS/SS/Jika check in dilakukan lebih dari 1 kali.jpg 
 image 3
