@@ -1,41 +1,59 @@
 'use strict';
-/** @type {import('sequelize-cli').Migration} */
+
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('Presensis', {
+    await queryInterface.createTable('presensi', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
-        type: Sequelize.INTEGER
+        type: Sequelize.INTEGER,
       },
+
       userId: {
         type: Sequelize.INTEGER,
-        allowNull: false
-      },
-      nama: {
-        type: Sequelize.STRING,
-        allowNull: false
-      },
-      checkIn: {
         allowNull: false,
-        type: Sequelize.DATE
+        references: {
+          model: 'users',
+          key: 'id',
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE',
       },
+
+      checkIn: {
+        type: Sequelize.DATE,
+        allowNull: true,
+      },
+
       checkOut: {
-        allowNull: true, // checkOut bisa kosong saat pertama kali check-in
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
+        allowNull: true,
       },
+
+      latitude: {
+        type: Sequelize.FLOAT,
+        allowNull: true,
+      },
+
+      longitude: {
+        type: Sequelize.FLOAT,
+        allowNull: true,
+      },
+
       createdAt: {
         allowNull: false,
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
       },
+
       updatedAt: {
         allowNull: false,
-        type: Sequelize.DATE
-      }
+        type: Sequelize.DATE,
+      },
     });
   },
+
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('Presensis');
+    await queryInterface.dropTable('presensi');
   }
 };
