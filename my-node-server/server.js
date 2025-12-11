@@ -1,9 +1,13 @@
 const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
+const path = require('path'); 
+
 
 const app = express();
 const PORT = 3001;
+
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Router
 const presensiRoutes = require("./routes/presensi");

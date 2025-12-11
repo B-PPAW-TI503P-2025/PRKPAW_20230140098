@@ -1,170 +1,181 @@
-import React, { useState, useEffect } from 'react'; 
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom'; 
-import Navbar from './Navbar'; 
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
-function ReportPage() { 
-  const [reports, setReports] = useState([]); 
-  const [error, setError] = useState(null); 
-  const navigate = useNavigate(); 
-  const [searchTerm, setSearchTerm] = useState(""); 
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+function ReportPage() {
+  const [reports, setReports] = useState([]);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedImage, setSelectedImage] = useState(null); // untuk modal foto
 
-  const getToken = () => localStorage.getItem("token");
-
-  const fetchReports = async (query = "", start = "", end = "") => {
-    const token = getToken(); 
-    if (!token) { 
-      navigate("/login"); 
-      return; 
+  const fetchReports = async (query) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/login");
+      return;
     }
 
-    try { 
-      const config = { 
-        headers: { Authorization: `Bearer ${token}` }, 
-        params: { nama: query, startDate: start, endDate: end }
+    try {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       };
 
-      setError(null); 
-      const response = await axios.get("http://localhost:3001/api/reports/daily", config);
-      setReports(response.data.data); 
+      const baseUrl = "http://localhost:3001/api/reports/daily";
+      const url = query ? `${baseUrl}?nama=${query}` : baseUrl;
 
-    } catch (err) { 
-      const message = err.response 
-                     ? err.response.data.message || `Gagal mengambil laporan: ${err.response.status}`
-                     : "Koneksi ke server gagal. Pastikan server berjalan dan Anda login sebagai admin.";
-      setError(message);
-      setReports([]); 
-      
-      if(err.response && err.response.status === 403) {
-          setTimeout(() => navigate('/dashboard'), 3000);
-      }
+      const response = await axios.get(url, config);
+      setReports(response.data.data);
+      setError(null);
+    } catch (err) {
+      setReports([]);
+      setError(
+        err.response ? err.response.data.message : "Gagal mengambil data"
+      );
     }
-  }; 
+  };
 
-  useEffect(() => { 
-    fetchReports("", '', ''); 
-  }, [navigate]); 
+  useEffect(() => {
+    fetchReports("");
+  }, [navigate]);
 
-  const handleFilterSubmit = (e) => { 
-    e.preventDefault(); 
-    fetchReports(searchTerm, startDate, endDate); 
-  }; 
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    fetchReports(searchTerm);
+  };
 
- return ( 
-    <>
-    <Navbar />
-    <div className="max-w-7xl mx-auto p-8 bg-white shadow-lg min-h-screen"> 
-      <h1 className="text-3xl font-extrabold text-indigo-700 mb-8 border-b pb-2"> 
-        📊 Laporan Presensi Harian Administrator 
+  return (
+    <div className="max-w-6xl mx-auto p-8">
+      <h1 className="text-3xl font-bold text-gray-800 mb-6">
+        Laporan Presensi Harian
       </h1>
 
-      <form onSubmit={handleFilterSubmit} className="mb-8 grid grid-cols-1 md:grid-cols-5 gap-4 items-end p-4 bg-gray-50 rounded-lg border"> 
-        
-        <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Cari Nama Pegawai</label>
-            <input
-                type="text"
-                placeholder="Masukkan nama..." 
-                value={searchTerm} 
-                onChange={(e) => setSearchTerm(e.target.value)} 
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" 
-            />
-        </div>
-
-        <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Dari Tanggal</label>
-            <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-            />
-        </div>
-
-        <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Sampai Tanggal</label>
-            <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-            />
-        </div>
-
+      <form onSubmit={handleSearchSubmit} className="mb-6 flex space-x-2">
+        <input
+          type="text"
+          placeholder="Cari berdasarkan nama..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="flex-grow px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+        />
         <button
-          type="submit" 
-          className="w-full py-2.5 bg-indigo-600 text-white font-semibold rounded-md shadow-md hover:bg-indigo-700 transition duration-200" 
+          type="submit"
+          className="py-2 px-4 bg-blue-600 text-white font-semibold rounded-md shadow-sm hover:bg-blue-700"
         >
-          Tampilkan Laporan
+          Cari
         </button>
-      </form> 
+      </form>
 
-      {error && ( 
-        <p className="text-red-700 bg-red-100 p-4 rounded-lg mb-6 font-medium border border-red-300">{error}</p> 
+      {error && (
+        <p className="text-red-600 bg-red-100 p-4 rounded-md mb-4">{error}</p>
       )}
 
-=      {!error && ( 
-        <div className="bg-white border rounded-lg overflow-x-auto"> 
-          <table className="min-w-full divide-y divide-gray-200"> 
-            <thead className="bg-gray-800 text-white"> 
-              <tr> 
-                <th className="px-6 py-3 text-left text-sm font-semibold tracking-wider">
+      {!error && (
+        <div className="bg-white shadow-md rounded-lg overflow-hidden">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Nama
                 </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Check-In
                 </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Check-Out
                 </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold tracking-wider">
-                  Durasi
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Latitude
                 </th>
-              </tr> 
-            </thead> 
-            <tbody className="bg-white divide-y divide-gray-200"> 
-              {reports.length > 0 ? ( 
-                reports.map((presensi) => {
-                    const checkInTime = new Date(presensi.checkIn);
-                    const checkOutTime = presensi.checkOut ? new Date(presensi.checkOut) : null;
-                    const durationMs = checkOutTime ? checkOutTime - checkInTime : null;
-                    const durationHours = durationMs ? (durationMs / (1000 * 60 * 60)).toFixed(2) : '-';
-                    
-                    return (
-                        <tr key={presensi.id} className="hover:bg-indigo-50 transition duration-100"> 
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"> 
-                                {presensi.User ? presensi.User.nama : "N/A"} 
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700"> 
-                                {checkInTime.toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })} 
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700"> 
-                                {checkOutTime
-                                    ? checkOutTime.toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })
-                                    : <span className="text-red-500 font-semibold">Belum Check-Out</span>} 
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold">
-                                {durationHours !== '-' ? `${durationHours} jam` : '-'}
-                            </td>
-                        </tr>
-                    );
-                }) 
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Longitude
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Bukti Foto
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {reports.length > 0 ? (
+                reports.map((presensi) => (
+                  <tr key={presensi.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {presensi.user ? presensi.user.nama : "N/A"}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(presensi.checkIn).toLocaleString("id-ID", {
+                        timeZone: "Asia/Jakarta",
+                      })}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {presensi.checkOut
+                        ? new Date(presensi.checkOut).toLocaleString("id-ID", {
+                            timeZone: "Asia/Jakarta",
+                          })
+                        : "Belum Check-Out"}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {presensi.latitude || "N/A"}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {presensi.longitude || "N/A"}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {presensi.buktiFoto ? (
+                        <img
+                          src={`http://localhost:3001/${presensi.buktiFoto}`}
+                          alt="Bukti Foto"
+                          className="w-16 h-16 object-cover rounded cursor-pointer hover:opacity-80"
+                          onClick={() =>
+                            setSelectedImage(`http://localhost:3001/${presensi.buktiFoto}`)
+                          }
+                        />
+                      ) : (
+                        <span className="text-gray-400 italic">Tidak ada</span>
+                      )}
+                    </td>
+                  </tr>
+                ))
               ) : (
-                <tr> 
-                  <td colSpan="4" className="px-6 py-8 text-center text-gray-500 italic"> 
-                    Tidak ada data presensi yang ditemukan untuk kriteria ini.
+                <tr>
+                  <td
+                    colSpan="6"
+                    className="px-6 py-4 text-center text-gray-500"
+                  >
+                    Tidak ada data yang ditemukan.
                   </td>
-                </tr> 
+                </tr>
               )}
-            </tbody> 
-          </table> 
-        </div> 
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Modal Foto */}
+      {selectedImage && (
+        <div
+          className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div className="relative">
+            <img
+              src={selectedImage}
+              alt="Bukti Foto Full"
+              className="max-h-[90vh] max-w-[90vw] rounded-lg shadow-lg"
+            />
+            <button
+              className="absolute top-2 right-2 bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700"
+              onClick={() => setSelectedImage(null)}
+            >
+              Tutup
+            </button>
+          </div>
+        </div>
       )}
     </div>
-    </>
-  ); 
+  );
 }
 
 export default ReportPage;

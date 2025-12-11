@@ -1,20 +1,52 @@
+'use strict';
+const {
+  Model
+} = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
-  const Presensi = sequelize.define('Presensi', {
+  class Presensi extends Model {
+    /**
+     * Helper method for defining associations.
+     * This method is not a part of Sequelize lifecycle.
+     * The models/index file will call this method automatically.
+     */
+    static associate(models) {
+      Presensi.belongsTo(models.User, {
+        foreignKey: "userId",
+        as: "user",
+      });
+      // define association here
+    }
+  }
+  Presensi.init({
+    userId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
     checkIn: {
       type: DataTypes.DATE,
       allowNull: false,
     },
     checkOut: {
       type: DataTypes.DATE,
-      allowNull: true,
+      allowNull: true, // Boleh null
     },
-  }, {});
-
-  Presensi.associate = function(models) {
-    Presensi.belongsTo(models.User, {
-      foreignKey: 'userId', 
-      as: 'User', 
-    });
-  };
+    latitude: {
+        type: DataTypes.DECIMAL(10, 7),
+        allowNull: false,
+    },
+    longitude: {
+        type: DataTypes.DECIMAL(10, 7),
+        allowNull: false,
+    },
+    buktiFoto: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    }
+  }, {
+    sequelize,
+    modelName: 'Presensi',
+    tableName: 'presensis',  
+    freezeTableName: true,
+  });
   return Presensi;
 };

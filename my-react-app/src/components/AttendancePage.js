@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
+import Webcam from "react-webcam";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import icon from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
 
-// Setup Icon untuk Peta Leaflet
 L.Marker.prototype.options.icon = L.icon({
   iconUrl: icon,
   shadowUrl: iconShadow,
@@ -20,8 +20,17 @@ L.Marker.prototype.options.icon = L.icon({
 function AttendancePage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+
   const [coords, setCoords] = useState(null); // {lat, lng}
   const [isLoading, setIsLoading] = useState(true);
+
+  const [image, setImage] = useState(null); // State untuk menyimpan hasil foto
+  const webcamRef = useRef(null);
+
+  const capture = useCallback(() => {
+    const imageSrc = webcamRef.current.getScreenshot();
+    setImage(imageSrc);
+  }, [webcamRef]);
 
   const getToken = () => {
     return localStorage.getItem("token");
@@ -47,38 +56,36 @@ function AttendancePage() {
       setIsLoading(false);
     }
   };
-
   useEffect(() => {
     getLocation();
   }, []);
 
   const handleCheckIn = async () => {
-    if (!coords) {
-      setError("Lokasi belum didapatkan. Mohon izinkan akses lokasi.");
+
+    if (!coords || !image) {
+      setError("Lokasi dan Foto wajib ada!");
       return;
     }
-    try {
-      const config = {
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-        },
-      };
 
-      // PERUBAHAN DI SINI: Menggunakan /presensi
+    try {
+      const blob = await (await fetch(image)).blob();
+
+      const formData = new FormData();
+      formData.append("latitude", coords.lat);
+      formData.append("longitude", coords.lng);
+      formData.append("image", blob, "selfie.jpg");
+
       const response = await axios.post(
         "http://localhost:3001/api/presensi/check-in",
-        {
-          latitude: coords.lat,
-          longitude: coords.lng,
-        },
-        config
+
+        formData,
+        { headers: { Authorization: `Bearer ${getToken()}` } }
+
       );
 
       setMessage(response.data.message);
-      setError(""); // Bersihkan error jika berhasil
     } catch (err) {
       setError(err.response ? err.response.data.message : "Check-in gagal");
-      setMessage(""); // Bersihkan pesan sukses jika gagal
     }
   };
 
@@ -91,8 +98,6 @@ function AttendancePage() {
           Authorization: `Bearer ${getToken()}`,
         },
       };
-      
-      // PERUBAHAN DI SINI: Menggunakan /presensi
       const response = await axios.post(
         "http://localhost:3001/api/presensi/check-out",
         {},
@@ -105,51 +110,75 @@ function AttendancePage() {
     }
   };
 
-  // --- LOGIKA TAMPILAN ---
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <p className="text-xl font-semibold text-gray-600">
-          Sedang mencari lokasi GPS...
-        </p>
-      </div>
-    );
-  }
-
-  if (error && !coords) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <p className="text-xl text-red-600">{error}</p>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center pt-10 pb-10">
-      <div className="bg-white p-4 rounded-lg shadow-md w-full mb-8 px-8 max-w-6xl">
-        <h3 className="text-xl font-semibold mb-2">Lokasi Terdeteksi:</h3>
-
-        <div className="my-4 border rounded-lg overflow-hidden">
-          <MapContainer
-            center={[coords.lat, coords.lng]}
-            zoom={15}
-            style={{ height: "300px", width: "100%" }}
-          >
-            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-            <Marker position={[coords.lat, coords.lng]}>
-              <Popup>Lokasi Presensi Anda</Popup>
-            </Marker>
-          </MapContainer>
+      {isLoading ? (
+        <div className="bg-white p-10 rounded-lg shadow-md w-full max-w-6xl mb-8 text-center">
+          <p className="text-xl font-semibold text-blue-600 animate-pulse">
+            Memuat Peta dan Mendeteksi Lokasi...
+          </p>
+          {error && <p className="text-red-600 mt-4">{error}</p>}
         </div>
+      ) : (
+        <div className="bg-white p-4 rounded-lg shadow-md w-full mb-8 px-8 max-w-6xl">
+          <h3 className="text-xl font-semibold mb-2">Lokasi Terdeteksi:</h3>
+          <div className="my-4 border rounded-lg overflow-hidden">
+            <MapContainer
+              center={[coords.lat, coords.lng]}
+              zoom={15}
+              style={{ height: "300px", width: "100%" }}
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              <Marker position={[coords.lat, coords.lng]}>
+                <Popup>Lokasi Presensi Anda</Popup>
+              </Marker>
+            </MapContainer>
+          </div>
+        </div>
+      )}
+
+
+      <div className="my-4 border rounded-lg overflow-hidden bg-black">
+        {image ? (
+          <img src={image} alt="Selfie" className="w-full" />
+        ) : (
+          <Webcam
+            audio={false}
+            ref={webcamRef}
+            screenshotFormat="image/jpeg"
+            className="w-full"
+          />
+        )}
       </div>
+
+      <div className="mb-4">
+        {!image ? (
+          <button
+            onClick={capture}
+            className="bg-blue-500 text-white px-4 py-2 rounded w-full"
+          >
+            Ambil Foto
+          </button>
+        ) : (
+          <button
+            onClick={() => setImage(null)}
+            className="bg-gray-500 text-white px-4 py-2 rounded w-full"
+          >
+            Foto Ulang
+          </button>
+        )}
+      </div>
+
 
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md text-center">
         <h2 className="text-3xl font-bold mb-6 text-gray-800">
           Lakukan Presensi
         </h2>
 
-        {message && <p className="text-green-600 mb-4 font-bold">{message}</p>}
+        {message && <p className="text-green-600 mb-4">{message}</p>}
         {error && <p className="text-red-600 mb-4">{error}</p>}
 
         <div className="flex space-x-4">
